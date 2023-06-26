@@ -129,7 +129,7 @@ def main():
         log_csv = f"{row['accnr']}," + ",".join([f"{row['property_id'][j]},'{old_values[j]}','{row['new_value'][j]}'" for j in range(len(old_values))])
         now = time.time()
         eta = int((now - start) * len(to_change) / (i + 1))
-        print(log_txt + "\tPassed time/Est total\t" + f"{int(now - start) // 60}:{int(now - start) % 60:02}/{eta//60}:{eta % 60:02}")
+        print(log_txt + "\tPassed time/Est total\t" + f"{int(now - start) // 60}:{int(now - start) % 60:02}/{eta//60}:{eta % 60:02}\t({i + 1}/{len(to_change)})")
         with open("log.txt", "a") as f:
             f.write(log_txt + "\n")
         with open("log.csv", "a") as f:
