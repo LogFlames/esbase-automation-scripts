@@ -1,12 +1,49 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import UnexpectedAlertPresentException
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support import expected_conditions as EC 
 import openpyxl
 import argparse
 import re
 import time
+
+def update_accnr(driver, row):
+    driver.get("http://esbase.nrm.se/accession?id=" + row["accnr"] + "&og")
+    time.sleep(0.1)
+
+    elem_first = None
+    old_values = []
+    for j in range(len(row["property_id"])):
+        try:
+            WebDriverWait(driver, 0.1, poll_frequency=0.05).until(EC.alert_is_present(), "No alert")
+            driver.switch_to.alert.accept()
+            print("Dismissed alert")
+        except TimeoutException:
+            pass
+
+        try:
+            elem = driver.find_element(By.ID, row["property_id"][j])
+            if j == 0:
+                elem_first = elem
+        except NoSuchElementException:
+            raise Exception(f"Invalid property_id '{row['property_id'][j]}', could not find element with id.")
+
+        if elem.tag_name == "select":
+            s = Select(elem)
+            old_values.append(s.first_selected_option.text)
+            s.select_by_visible_text(row["new_value"][j])
+        else:
+            old_values.append(elem.get_attribute("value"))
+            elem.clear()
+            elem.send_keys(row["new_value"][j])
+
+    return elem_first, old_values
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -49,7 +86,7 @@ def main():
     opt.binary_location = "./FirefoxPortable/App/Firefox64/firefox.exe"
 
     driver = webdriver.Firefox(options = opt)
-    driver.implicitly_wait(15)
+    driver.implicitly_wait(60)
     driver.get("http://esbase.nrm.se")
 
     input(" -- Press enter when you've logged in: -- \n")
@@ -64,26 +101,9 @@ def main():
         f.write(f"accnr,property_id,old_value,new_value" + "\n")
 
     for i, row in enumerate(to_change):
-        driver.get("http://esbase.nrm.se/accession?id=" + row["accnr"])
-
-        elem_first = None
-        old_values = []
-        for j in range(len(row["property_id"])):
-            try:
-                elem = driver.find_element(By.ID, row["property_id"][j])
-                if j == 0:
-                    elem_first = elem
-            except NoSuchElementException:
-                raise Exception(f"Invalid property_id '{row['property_id'][j]}', could not find element with id.")
-
-            if elem.tag_name == "select":
-                s = Select(elem)
-                old_values.append(s.first_selected_option.text)
-                s.select_by_visible_text(row["new_value"][j])
-            else:
-                old_values.append(elem.text)
-                elem.clear()
-                elem.send_keys(row["new_value"][j])
+        elem_first, old_values = None, None
+        while elem_first is None or old_values is None:
+            elem_first, old_values = update_accnr(driver, row)
 
         if first:
             ans = input("Does everything look good? (y/n) ")
@@ -102,6 +122,8 @@ def main():
             raise Exception("First element was None, cannot submit")
         else:
             elem_first.submit()
+            while "&og" in driver.current_url:
+                time.sleep(0.5)
 
         log_txt = f"Updated '{row['accnr']}': '{row['property_id']}' from '{old_values}' to '{row['new_value']}'"
         log_csv = f"{row['accnr']}," + ",".join([f"{row['property_id'][j]},'{old_values[j]}','{row['new_value'][j]}'" for j in range(len(old_values))])
