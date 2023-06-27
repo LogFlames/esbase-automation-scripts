@@ -36,7 +36,24 @@ def update_accnr(driver, row):
         if elem.tag_name == "select":
             s = Select(elem)
             old_values.append(s.first_selected_option.text)
-            s.select_by_visible_text(row["new_value"][j])
+            vals = []
+            texts = []
+            for e in s.options:
+                texts.append(e.text)
+                vals.append(e.get_attribute("value"))
+
+            if row["new_value"][j] in vals:
+                s.select_by_value(row["new_value"][j])
+                if row["new_value"][j] in texts:
+                    print(f"WARNING: The new select value '{row['new_value'][j]}' was found both in the option-values and option-texts, " +
+                            "selecting based on value. Make sure this is your indended behaviour")
+            elif row["new_value"][j] in texts:
+                s.select_by_visible_text(row["new_value"][j])
+                if texts.count(row["new_value"][j]) >= 2:
+                    print("WARNING: The new select text '{row['new_value'][j]}' was found multiple times in the option-texts, selecting the first one. " +
+                            "This is probably wrong and you likely want to use the option-values instead.")
+            else:
+                raise Exception(f"The new value '{row['new_value'][j]}' for the select element was not found in the values nor the text of the select element.")
         else:
             old_values.append(elem.get_attribute("value"))
             elem.clear()
