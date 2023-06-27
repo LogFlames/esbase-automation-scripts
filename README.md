@@ -35,6 +35,12 @@ Go to [http://esbase.nrm.se](http://esbase.nrm.se) and get all the `id`:s of the
 For fields with search options, make sure to use the drop-down select as the script doesn't wait for the search to finish (person, locality, etc.).
 
 For all select fields (dropdown) you must enter the `value` of the option. 
+
+For example, the following values should be placed in the execl-sheet:
+![select_inspector](https://github.com/LogFlames/esbase-automation-scripts/assets/36220731/8e8b836a-3aa5-49f2-9625-634b5db1e9b6)
+![select_excel](https://github.com/LogFlames/esbase-automation-scripts/assets/36220731/4e7f9b52-65f7-4c23-8d25-86dbbbed5c85)
+
+
 Once the excel-sheet is filled in. Run the following command (make sure to replace `name_of_new_file` with the name you chose earlier):
 ```bash
 python set_property_for_accnrs.py --excel name_of_new_file.xlsx
