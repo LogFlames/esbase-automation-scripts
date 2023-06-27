@@ -76,10 +76,20 @@ def main():
                 if "new_value" not in values[nv]:
                     raise Exception(f"The column {nv + 1} must contain 'new_value'")
         else:
-            if re.match("[1-9]{1}[0-9]{8}", values[0]) is None:
-                raise Exception(f"Invalid accnr '{values[0]}', please enter on the form in the database: eg 'A2022/12345' -> '202212345', 'B2022/12345' -> '102212345'")
+            if re.match("^[ABCDGHLXP][0-9]{4}/?[0-9]{5}$", values[0]) is None:
+                raise Exception(f"Invalid accnr '{values[0]}', please enter on the form: 'A2022/12345' or 'A202212345'. Only ABCDGHLXP are allowed as prefixed letters.")
 
-            to_change.append({ "accnr": values[0], "property_id": values[1::2], "new_value": values[2::2] })
+            letter = values[0][0]
+            year = values[0][1:5]
+            if "/" in values[0]:
+                value = values[0][6:]
+            else:
+                value = values[0][5:]
+
+            fn = {"A": "1", "B": "2", "C": "3", "D": "4", "G": "7", "H": "8", "L": "5", "P": "9", "X": "6"}[letter]
+            accdb = f"{fn}{year[1:]}{value}"
+
+            to_change.append({ "accnr": accdb, "property_id": values[1::2], "new_value": values[2::2] })
             print(to_change[-1])
 
     opt = webdriver.FirefoxOptions()
