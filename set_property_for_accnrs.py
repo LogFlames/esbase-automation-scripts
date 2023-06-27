@@ -50,7 +50,7 @@ def update_accnr(driver, row):
             elif row["new_value"][j] in texts:
                 s.select_by_visible_text(row["new_value"][j])
                 if texts.count(row["new_value"][j]) >= 2:
-                    print("WARNING: The new select text '{row['new_value'][j]}' was found multiple times in the option-texts, selecting the first one. " +
+                    print(f"WARNING: The new select text '{row['new_value'][j]}' was found multiple times in the option-texts, selecting the first one. " +
                             "This is probably wrong and you likely want to use the option-values instead.")
             else:
                 raise Exception(f"The new value '{row['new_value'][j]}' for the select element was not found in the values nor the text of the select element.")
