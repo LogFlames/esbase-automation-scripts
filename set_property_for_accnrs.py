@@ -95,57 +95,55 @@ def main():
     opt = webdriver.FirefoxOptions()
     opt.binary_location = "./FirefoxPortable/App/Firefox64/firefox.exe"
 
-    driver = webdriver.Firefox(options = opt)
-    driver.implicitly_wait(60)
-    driver.get("http://esbase.nrm.se")
+    with webdriver.Firefox(options = opt) as driver:
+        driver.implicitly_wait(60)
+        driver.get("http://esbase.nrm.se")
 
-    input(" -- Press enter when you've logged in: -- \n")
+        input(" -- Press enter when you've logged in: -- \n")
 
 
-    first = True
-    start = time.time()
+        first = True
+        start = time.time()
 
-    with open("log.txt", "a") as f:
-        f.write(f"Run started at {start}" + "\n")
-    with open("log.csv", "a") as f:
-        f.write(f"accnr,property_id,old_value,new_value" + "\n")
-
-    for i, row in enumerate(to_change):
-        elem_first, old_values = None, None
-        while elem_first is None or old_values is None:
-            elem_first, old_values = update_accnr(driver, row)
-
-        if first:
-            ans = input("Does everything look good? (y/n) ")
-            while ans not in ["y", "n"]:
-                ans = input("Does everything look good? (y/n) ")
-            if ans != "y":
-                print("Aborting operations...")
-                with open("log.txt", "a") as f:
-                    f.write("Run aborted" + "\n")
-                driver.close()
-                exit()
-            first = False
-            start = time.time()
-
-        if elem_first is None:
-            raise Exception("First element was None, cannot submit")
-        else:
-            elem_first.submit()
-            while "&og" in driver.current_url:
-                time.sleep(0.5)
-
-        log_txt = f"Updated '{row['accnr']}': '{row['property_id']}' from '{old_values}' to '{row['new_value']}'"
-        log_csv = f"{row['accnr']}," + ",".join([f"{row['property_id'][j]},'{old_values[j]}','{row['new_value'][j]}'" for j in range(len(old_values))])
-        now = time.time()
-        eta = int((now - start) * len(to_change) / (i + 1))
-        print(log_txt + "\tPassed time/Est total\t" + f"{int(now - start) // 60}:{int(now - start) % 60:02}/{eta//60}:{eta % 60:02}\t({i + 1}/{len(to_change)})")
         with open("log.txt", "a") as f:
-            f.write(log_txt + "\n")
+            f.write(f"Run started at {start}" + "\n")
         with open("log.csv", "a") as f:
-            f.write(log_csv + "\n")
+            f.write(f"accnr,property_id,old_value,new_value" + "\n")
 
-    driver.close()
+        for i, row in enumerate(to_change):
+            elem_first, old_values = None, None
+            while elem_first is None or old_values is None:
+                elem_first, old_values = update_accnr(driver, row)
+
+            if first:
+                ans = input("Does everything look good? (y/n) ")
+                while ans not in ["y", "n"]:
+                    ans = input("Does everything look good? (y/n) ")
+                if ans != "y":
+                    print("Aborting operations...")
+                    with open("log.txt", "a") as f:
+                        f.write("Run aborted" + "\n")
+                    driver.close()
+                    exit()
+                first = False
+                start = time.time()
+
+            if elem_first is None:
+                raise Exception("First element was None, cannot submit")
+            else:
+                elem_first.submit()
+                while EC.alert_is_present()(driver) or "&og" in driver.current_url:
+                    time.sleep(0.5)
+
+            log_txt = f"Updated '{row['accnr']}': '{row['property_id']}' from '{old_values}' to '{row['new_value']}'"
+            log_csv = f"{row['accnr']}," + ",".join([f"{row['property_id'][j]},'{old_values[j]}','{row['new_value'][j]}'" for j in range(len(old_values))])
+            now = time.time()
+            eta = int((now - start) * len(to_change) / (i + 1))
+            print(log_txt + "\tPassed time/Est total\t" + f"{int(now - start) // 60}:{int(now - start) % 60:02}/{eta//60}:{eta % 60:02}\t({i + 1}/{len(to_change)})")
+            with open("log.txt", "a") as f:
+                f.write(log_txt + "\n")
+            with open("log.csv", "a") as f:
+                f.write(log_csv + "\n")
 
 if __name__ == "__main__":
     main()
